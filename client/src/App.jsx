@@ -1,10 +1,12 @@
-// import React from 'react';
-import { Link, Route, Routes, Outlet } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
-import ContactUs from './pages/ContactUs';
+import GoogleDrive from './pages/GoogleDrive';
+import BackendLess from './pages/BackendLess';
+import AuthWrapper from './Components/AuthWrapper';
+import Drive from './pages/Drive';
 
 const App = () => {
   return (
@@ -12,9 +14,11 @@ const App = () => {
       <Routes>
         <Route path='/' element={<Login />} />
         <Route path='/signup' element={<Signup />} />
-        <Route path='/dashboard' element={<Dashboard />} />
-        <Route path='/profile' element={<Profile />} />
-        <Route path='/contact-us' element={<ContactUs />} />
+        <Route path='/dashboard' element={<AuthWrapper children={<Dashboard />} />} />
+        <Route path='/profile' element={<AuthWrapper children={<Profile />} />} />
+        <Route path='/google-drive' element={<AuthWrapper children={<GoogleDrive />} />} />
+        <Route path='/backendless' element={<AuthWrapper children={<BackendLess />} />} />
+        <Route path='/drive' element={<AuthWrapper children={<Drive />} />} />
       </Routes>
     </div>
   )

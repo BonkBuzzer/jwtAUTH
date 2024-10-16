@@ -53,9 +53,10 @@ const Login = () => {
             setSnackbarSeverity('success');
             setOpenSnackbar(true);
             console.log(response)
-            const token = response?.data.token;
+            const accessToken = response?.data.accessToken;
+            const refreshToken = response?.data.refreshToken;
             const id = response?.data.userDoc._id;
-            dispatch(setUser({ email, token, id }))
+            dispatch(setUser({ email, accessToken, refreshToken, id }))
             await new Promise(resolve => {
                 const timer = setTimeout(() => {
                     resolve();
@@ -64,6 +65,7 @@ const Login = () => {
             });
             navigate('/dashboard')
         } catch (error) {
+            console.log(error)
             setSnackbarMessage(error.response?.data?.message || 'Login failed.');
             setSnackbarSeverity('error');
             setOpenSnackbar(true);
@@ -95,6 +97,7 @@ const Login = () => {
                                 name="email"
                                 onChange={handleEmailChange}
                                 required
+                                defaultValue={'Dhruval@gmail.com'}
                                 className="w-full px-3 py-2 bg-transparent border-[#89949f] hover:border-white focus:border-[#00A4EF] border-[1px] text-white rounded-md focus:outline-none"
                             />
                         </div>
@@ -104,6 +107,7 @@ const Login = () => {
                                 type="password"
                                 id="password"
                                 name="password"
+                                defaultValue={'12345678Qw$'}
                                 onChange={handlePasswordChange}
                                 required
                                 className="w-full px-3 py-2 bg-transparent border-[#89949f] hover:border-white focus:border-[#00A4EF] border-[1px] text-white rounded-md focus:outline-none"

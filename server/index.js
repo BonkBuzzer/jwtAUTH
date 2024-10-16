@@ -24,7 +24,7 @@ mongoose.connect(process.env.MONGODB_URI)
     .catch(err => console.error('MongoDB connection error:', err));
 
 app.use('/auth', authRoutes)
-app.use('/', userRoutes)
+app.use('/', auth, userRoutes)
 
 app.get('/', (_, res) => {
     res.json({ message: 'This is an unprotected route , it is there for testing purposes only.' });
