@@ -3,58 +3,112 @@ import { domain } from '../lib/constants';
 import { useAppSelector } from "../store/hooks";
 
 const Dashboard = () => {
-    const [files, setFiles] = useState([]);
-    const userData = useAppSelector(state => state.user.userData);
+    //     const [files, setFiles] = useState([]);
+    //     const userData = useAppSelector(state => state.user.userData);
 
-    const handleFileChange = (event) => {
-        const selectedFiles = Array.from(event.target.files);
-        setFiles(selectedFiles);
-    };
+    //     const handleFileChange = (event) => {
+    //         const selectedFiles = Array.from(event.target.files);
+    //         setFiles(selectedFiles);
+    //     };
 
-    const handleSubmit = async (event) => {
-        event.preventDefault();
+    //     const handleSubmit = async (event) => {
+    //         event.preventDefault();
 
-        const formData = new FormData();
-        files.forEach(file => {
-            formData.append('mediaFiles', file);
-        });
+    //         const formData = new FormData();
+    //         files.forEach(file => {
+    //             formData.append('mediaFiles', file);
+    //         });
 
-        try {
-            const result = await fetch(`${domain}/multipleUploads`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${userData.accessToken}`,
-                },
-                body: formData,
-            });
+    //         try {
+    //             const result = await fetch(`${domain}/multipleUploads`, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Authorization': `Bearer ${userData.accessToken}`,
+    //                 },
+    //                 body: formData,
+    //             });
 
-            if (!result.ok) {
-                throw new Error('Upload failed');
-            }
+    //             if (!result.ok) {
+    //                 throw new Error('Upload failed');
+    //             }
 
-            const data = await result.json();
-            console.log('Upload successful:', data);
-        } catch (err) {
-            console.error('Error uploading files:', err);
-        }
-    };
+    //             const data = await result.json();
+    //             console.log('Upload successful:', data);
+    //         } catch (err) {
+    //             console.error('Error uploading files:', err);
+    //         }
+    //     };
+
+    //     return (
+    //         <>
+    //             <form onSubmit={handleSubmit}>
+    //                 <div className="grid place-content-center mt-20">
+    //                     <input
+    //                         type="file"
+    //                         name="mediaFiles"
+    //                         id="mediaFiles"
+    //                         multiple
+    //                         accept="image/*,.xlsx,.xls"
+    //                         onChange={handleFileChange}
+    //                         required
+    //                     />
+    //                     <button type="submit">TAP ME!</button>
+    //                 </div>
+    //             </form>
+    //         </>
+    //     );
+
+    // const [file, setFile] = useState();
+    // const userData = useAppSelector(state => state.user.userData);
+
+    // const handleFileChange = (event) => {
+    //     const selectedFile = event.target.files[0];
+    //     setFile(selectedFile);
+    // };
+
+    // const handleSubmit = async (event) => {
+    //     event.preventDefault();
+    
+    //     const formData = new FormData();
+    //     formData.append('individualFile', file);
+    //     formData.append('resourcePath', '/a/');
+    
+    //     try {
+    //         const result = await fetch(`${domain}/createFile`, {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Authorization': `Bearer ${userData.accessToken}`,
+    //             },
+    //             body: formData,
+    //         });
+    
+    //         if (!result.ok) {
+    //             console.log(result);
+    //             throw new Error('Upload failed');
+    //         }
+    
+    //         const data = await result.json();
+    //         console.log('Upload successful:', data);
+    //     } catch (err) {
+    //         console.error('Error uploading files:', err);
+    //     }
+    // };
+    
 
     return (
         <>
-            <form onSubmit={handleSubmit}>
+            {/* <form onSubmit={handleSubmit}>
                 <div className="grid place-content-center mt-20">
                     <input
                         type="file"
-                        name="mediaFiles"
-                        id="mediaFiles"
-                        multiple
-                        accept="image/*,.xlsx,.xls"
+                        name="individualFile"
+                        id="individualFile"
                         onChange={handleFileChange}
                         required
                     />
                     <button type="submit">TAP ME!</button>
                 </div>
-            </form>
+            </form> */}
         </>
     );
 };

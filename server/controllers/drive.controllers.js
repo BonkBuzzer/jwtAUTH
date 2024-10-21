@@ -3,39 +3,89 @@ const path = require('path');
 const { User } = require('../models/User');
 const { default: mongoose } = require('mongoose');
 
-const createResource = async (req, res) => {
+const createFolder = async (req, res) => {
     try {
-        const { isFolder, resourceName, resourcePath } = req.body;
+        let { resourcePath, fromLocation } = req.body;
         const { _id } = req.user;
+        let newFolderName = fromLocation + resourcePath
+        if (!resourcePath) {
+            return res.status(400).json({ message: 'Resource path is required.' });
+        }
+        const pipeline = [
+            {
+                $match: { _id: new mongoose.Types.ObjectId(_id) }
+            },
+            {
+                $unwind: "$userUploads"
+            },
+            {
+                $match: {
+                    "userUploads.path": {
+                        $regex: `^${newFolderName
+                            }`, $options: "i"
+                    }
+                }
+            },
+            {
+                $project: {
+                    similarPath: "$userUploads.path",
+                    fileName: "$userUploads.fileName",
+                    _id: 0
+                }
+            }
+        ]
+        let pipelineAns = await User.aggregate(pipeline)
+        console.log(pipelineAns)
+        if (pipelineAns && pipelineAns.length > 0) {
+            return res.status(409).json({ message: 'Similar data found, cannot create a folder' });
+        }
+        const updatedUser = await User.findByIdAndUpdate(
+            _id,
+            {
+                $push: {
+                    userUploads: {
+                        path: fromLocation ? (fromLocation + resourcePath) : resourcePath
+                    }
+                },
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+        return res.status(200).json({
+            message: 'Resource created successfully.'
+        })
+    } catch (error) {
+        console.error('Error in createFolder:', error);
+        return res.status(500).json({ message: 'Something went wrong', error: error.message });
+    }
+};
+
+const createFile = async (req, res) => {
+    try {
+        const { resourcePath } = req.body;
+        const { _id } = req.user;
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'File is required.' });
+        }
 
         if (!resourcePath) {
             return res.status(400).json({ message: 'Resource path is required.' });
         }
 
-        let update = {
+        const update = {
             $push: {
                 userUploads: {
-                    path: resourcePath + resourceName
+                    path: resourcePath,
+                    fileName: req.file.originalname,
+                    storageFilename: req.file.filename
                 }
             }
         };
-
-        if (!isFolder) {
-            if (!resourceName) {
-                return res.status(400).json({ message: 'Resource name is required for files.' });
-            }
-
-            const fileNameForCreation = `${_id}_${Date.now()}_${resourceName}`;
-            const filePath = path.join('E:/!unknown/jwt-auth/server/uploads/', fileNameForCreation);
-
-            await fs.writeFile(filePath, '');
-
-            update.$push.userUploads = {
-                path: resourcePath,
-                fileName: resourceName,
-                storageFilename: fileNameForCreation
-            };
-        }
 
         const updatedUser = await User.findByIdAndUpdate(
             _id,
@@ -48,10 +98,11 @@ const createResource = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: 'Resource created successfully.'
-        })
+            message: 'Resource created successfully.',
+            userMedia: updatedUser.userUploads
+        });
     } catch (error) {
-        console.error('Error in createResource:', error);
+        console.error('Error in createFolder:', error);
         return res.status(500).json({ message: 'Something went wrong', error: error.message });
     }
 };
@@ -59,9 +110,8 @@ const createResource = async (req, res) => {
 const getResults = async (req, res) => {
     try {
         const { query } = req.query;
-        console.log(query)
         const { _id } = req.user;
-
+        const numberOfSlashes = (query.match(/\//g) || []).length - 1;
         const pipeline = [
             { $match: { _id: new mongoose.Types.ObjectId(_id) } },
             { $unwind: "$userUploads" },
@@ -72,44 +122,57 @@ const getResults = async (req, res) => {
             },
             {
                 $project: {
-                    path: "$userUploads.path",
-                    fileName: "$userUploads.fileName",
-                    storageFilename: "$userUploads.storageFilename",
-                    nextSegment: {
-                        $arrayElemAt: [
-                            { $split: [{ $substr: ["$userUploads.path", { $strLenCP: query }, -1] }, "/"] },
-                            0
-                        ]
-                    },
-                    isFile: { $ne: [{ $indexOfCP: ["$userUploads.path", "/", { $add: [{ $strLenCP: query }, 1] }] }, -1] }
+                    segments: { $split: ["$userUploads.path", "/"] },
+                    fileName: "$userUploads.fileName"
+                }
+            },
+            {
+                $project: {
+                    desiredSegment: { $arrayElemAt: ["$segments", numberOfSlashes + 1] },
+                    fileName: 1
                 }
             },
             {
                 $group: {
-                    _id: "$nextSegment",
-                    isFile: { $first: "$isFile" },
-                    path: { $first: "$path" },
-                    fileName: { $first: "$fileName" },
-                    storageFilename: { $first: "$storageFilename" }
+                    _id: null,
+                    uniqueSegments: {
+                        $addToSet: {
+                            segment: {
+                                $cond: [
+                                    { $ne: ["$desiredSegment", ""] },
+                                    "$desiredSegment",
+                                    "$fileName"
+                                ]
+                            },
+                            type: {
+                                $cond: [
+                                    { $ne: ["$desiredSegment", ""] },
+                                    "folder",
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
                 }
             },
             {
                 $project: {
                     _id: 0,
-                    name: "$_id",
-                    path: 1,
-                    fileName: 1
+                    uniqueSegments: {
+                        $filter: {
+                            input: "$uniqueSegments",
+                            as: "item",
+                            cond: { $ne: ["$$item.segment", ""] }
+                        }
+                    }
                 }
             }
-        ];
-
-        const results = await User.aggregate(pipeline);
-
-        console.log('Aggregation results:', JSON.stringify(results, null, 2));
+        ]
+        let results = await User.aggregate(pipeline)
 
         res.json({
             message: 'Search completed',
-            results: results
+            results
         });
     } catch (error) {
         console.error('Error in getResults:', error);
@@ -117,4 +180,4 @@ const getResults = async (req, res) => {
     }
 };
 
-module.exports = { createResource, getResults };
+module.exports = { createFolder, getResults, createFile };
